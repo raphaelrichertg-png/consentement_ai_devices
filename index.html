@@ -79,7 +79,7 @@
 
 <div class="header">
   <h1>Formulaire de Consentement Éclairé</h1>
-  <p>Atelier IA en Odontologie · Faculté d'odontologie de Lyon · Octobre 2026</p>
+  <p>Atelier IA en Odontologie · Faculté d'odontologie de Lyon · 16 octobre 2026</p>
   <div class="header-logos">
     <span>Université Lyon 1</span>
     <span>·</span>
@@ -164,10 +164,10 @@
         <select id="f-statut" required>
           <option value="">— Sélectionner —</option>
           <option>Étudiant(e) en odontologie</option>
+          <option>Interne</option>
           <option>Chirurgien(ne)-dentiste</option>
-          <option>Interne / Assistant</option>
-          <option>Enseignant(e) / MCU-PH</option>
-          <option>Autre professionnel de santé</option>
+          <option>Enseignant(e)</option>
+          <option>Autre</option>
         </select>
       </div>
       <div class="field">
@@ -276,7 +276,7 @@ function clearSig() {
 }
 
 /* ── Form validation ─────────────────────────────────────────────── */
-document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+document.getElementById('f-date').value = '2026-10-16';
 
 function checkForm() {
   const ok = document.getElementById('f-prenom').value.trim() &&
