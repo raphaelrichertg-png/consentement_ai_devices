@@ -4,20 +4,18 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Formulaire de consentement — Atelier IA en odontologie</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; color: #1a1a2e; font-size: 15px; line-height: 1.65; }
 
-  /* ── Header ── */
   .header { background: #1A5276; color: #fff; padding: 28px 0 22px; text-align: center; }
   .header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -.01em; }
   .header p  { font-size: .88rem; opacity: .75; margin-top: 4px; }
   .header-logos { display: flex; justify-content: center; gap: 28px; margin-top: 14px; opacity: .55; font-size: .78rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
 
-  /* ── Layout ── */
   .page { max-width: 760px; margin: 36px auto; padding: 0 16px; }
 
-  /* ── Card ── */
   .card { background: #fff; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,.07); overflow: hidden; margin-bottom: 20px; }
   .card-head { background: #eaf0f8; border-bottom: 2px solid #1A5276; padding: 14px 24px; display: flex; align-items: center; gap: 10px; }
   .card-head .num { background: #1A5276; color: #fff; width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: .8rem; font-weight: 700; flex-shrink: 0; }
@@ -26,16 +24,11 @@
   .card-body p { margin-bottom: 10px; color: #333; }
   .card-body p:last-child { margin-bottom: 0; }
 
-  /* ── Criteria list ── */
   .criteria { list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; margin-top: 8px; }
   .criteria li { display: flex; gap: 8px; align-items: flex-start; font-size: .9rem; color: #444; }
   .criteria li::before { content: '✓'; color: #1A5276; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
   @media (max-width: 540px) { .criteria { grid-template-columns: 1fr; } }
 
-  /* ── Notice box ── */
-  .notice { background: #fef9e7; border-left: 4px solid #f1c40f; border-radius: 6px; padding: 12px 16px; font-size: .88rem; color: #555; margin-top: 10px; }
-
-  /* ── Form ── */
   .form-section { background: #fff; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,.07); padding: 28px 28px 24px; margin-bottom: 20px; }
   .form-section h2 { font-size: 1.1rem; font-weight: 700; color: #1A5276; border-bottom: 2px solid #1A5276; padding-bottom: 8px; margin-bottom: 22px; }
 
@@ -52,41 +45,41 @@
   .consent-check input[type=checkbox] { width: 20px; height: 20px; margin-top: 2px; accent-color: #1A5276; cursor: pointer; flex-shrink: 0; }
   .consent-check span { font-size: .95rem; color: #1a1a2e; line-height: 1.6; }
 
-  /* ── Button ── */
-  .btn-submit { width: 100%; padding: 14px; background: #1A5276; color: #fff; border: none; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: background .2s, transform .1s; letter-spacing: .01em; }
+  /* Signature pad */
+  .sig-wrap { margin: 20px 0 8px; }
+  .sig-wrap label { font-size: .82rem; font-weight: 700; color: #1A5276; text-transform: uppercase; letter-spacing: .04em; display: block; margin-bottom: 8px; }
+  .sig-area { position: relative; border: 1.5px solid #d0d7e3; border-radius: 8px; background: #fafbfd; overflow: hidden; }
+  #sig-canvas { display: block; width: 100%; height: 140px; cursor: crosshair; touch-action: none; }
+  .sig-hint { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: #bbb; font-size: .88rem; pointer-events: none; text-align: center; line-height: 1.4; user-select: none; }
+  .sig-hint.hidden { display: none; }
+  .sig-clear { font-size: .78rem; color: #888; background: none; border: none; cursor: pointer; text-decoration: underline; margin-top: 4px; float: right; }
+  .sig-clear:hover { color: #1A5276; }
+
+  .btn-submit { width: 100%; padding: 14px; background: #1A5276; color: #fff; border: none; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: background .2s, transform .1s; letter-spacing: .01em; margin-top: 22px; }
   .btn-submit:hover { background: #154360; }
   .btn-submit:active { transform: scale(.99); }
   .btn-submit:disabled { background: #aaa; cursor: not-allowed; }
 
-  /* ── Confirmation ── */
+  /* Confirmation */
   #confirmation { display: none; background: #fff; border-radius: 12px; box-shadow: 0 2px 20px rgba(0,0,0,.1); padding: 36px 32px; border-top: 5px solid #27ae60; text-align: center; margin-bottom: 20px; }
   #confirmation .check-icon { font-size: 3rem; margin-bottom: 12px; }
   #confirmation h2 { color: #1e8449; font-size: 1.4rem; margin-bottom: 8px; }
   #confirmation .ref { font-size: .82rem; color: #777; margin: 6px 0 22px; font-family: monospace; }
   #confirmation .summary-box { background: #f4f6f9; border-radius: 8px; padding: 16px 20px; text-align: left; font-size: .9rem; line-height: 2; margin-bottom: 22px; }
   #confirmation .summary-box strong { color: #1A5276; }
-  .btn-print { display: inline-block; padding: 11px 28px; background: #1A5276; color: #fff; border-radius: 8px; font-weight: 700; font-size: .92rem; cursor: pointer; border: none; margin-right: 10px; }
-  .btn-email { display: inline-block; padding: 11px 28px; background: #fff; color: #1A5276; border: 2px solid #1A5276; border-radius: 8px; font-weight: 700; font-size: .92rem; cursor: pointer; text-decoration: none; }
-  .btn-print:hover { background: #154360; }
-  .print-note { font-size: .8rem; color: #888; margin-top: 12px; }
+  .btn-pdf { display: inline-block; padding: 11px 28px; background: #1A5276; color: #fff; border-radius: 8px; font-weight: 700; font-size: .92rem; cursor: pointer; border: none; margin-right: 10px; margin-bottom: 10px; }
+  .btn-email { display: inline-block; padding: 11px 28px; background: #fff; color: #1A5276; border: 2px solid #1A5276; border-radius: 8px; font-weight: 700; font-size: .92rem; cursor: pointer; text-decoration: none; margin-bottom: 10px; }
+  .btn-pdf:hover { background: #154360; }
+  .print-note { font-size: .8rem; color: #888; margin-top: 12px; line-height: 1.5; }
 
-  /* ── Footer ── */
   .footer { text-align: center; font-size: .78rem; color: #aaa; padding: 20px 0 40px; }
-
-  /* ── PRINT ── */
-  @media print {
-    body { background: #fff; }
-    .header, .page > .card, .form-section { display: none !important; }
-    #confirmation { display: block !important; box-shadow: none; border-radius: 0; page-break-inside: avoid; }
-    .btn-print, .btn-email, .print-note { display: none !important; }
-  }
 </style>
 </head>
 <body>
 
 <div class="header">
   <h1>Formulaire de Consentement Éclairé</h1>
-  <p>Atelier IA en Odontologie · Faculté d'odontologie de Lyon · 16 octobre 2026</p>
+  <p>Atelier IA en Odontologie · Faculté d'odontologie de Lyon · Octobre 2026</p>
   <div class="header-logos">
     <span>Université Lyon 1</span>
     <span>·</span>
@@ -98,7 +91,6 @@
 
 <div class="page" id="form-page">
 
-  <!-- 1. But -->
   <div class="card">
     <div class="card-head"><span class="num">1</span><h2>But de l'étude</h2></div>
     <div class="card-body">
@@ -107,7 +99,6 @@
     </div>
   </div>
 
-  <!-- 2. Engagement -->
   <div class="card">
     <div class="card-head"><span class="num">2</span><h2>Déroulement et engagement</h2></div>
     <div class="card-body">
@@ -119,7 +110,7 @@
         <li>Explicabilité de l'IA</li>
         <li>Garantie de supervision humaine</li>
         <li>Fréquence des mises à jour</li>
-        <li>Documentation technique & scientifique</li>
+        <li>Documentation technique &amp; scientifique</li>
         <li>Conformité réglementaire (CE-DM, IA Act)</li>
         <li>Transparence des coûts</li>
         <li>Qualité du support client</li>
@@ -128,7 +119,6 @@
     </div>
   </div>
 
-  <!-- 3. Libertés -->
   <div class="card">
     <div class="card-head"><span class="num">3</span><h2>Liberté de participation</h2></div>
     <div class="card-body">
@@ -136,7 +126,6 @@
     </div>
   </div>
 
-  <!-- 4. Confidentialité -->
   <div class="card">
     <div class="card-head"><span class="num">4</span><h2>Confidentialité des données</h2></div>
     <div class="card-body">
@@ -145,17 +134,16 @@
     </div>
   </div>
 
-  <!-- 5. Contact -->
   <div class="card">
     <div class="card-head"><span class="num">5</span><h2>Contact</h2></div>
     <div class="card-body">
       <p><strong>Dr. Raphaël RICHERT</strong> — MCU-PH en Endodontie<br>
       Faculté d'odontologie de Lyon · 11 rue Guillaume Paradin · 69372 Lyon Cedex 08<br>
-      Courriel : <a href="mailto:raphael.richert@univ-lyon1.fr" style="color:#1A5276;">raphael.richert@univ-lyon1.fr</a></p>
+      Courriel : <a href="mailto:raphael.richert@insa-lyon.fr" style="color:#1A5276;">raphael.richert@insa-lyon.fr</a></p>
     </div>
   </div>
 
-  <!-- Formulaire de signature -->
+  <!-- Formulaire -->
   <div class="form-section">
     <h2>✍️ Votre consentement</h2>
 
@@ -195,96 +183,344 @@
       </label>
     </div>
 
-    <div class="notice">
-      <strong>Comment ça fonctionne :</strong> après avoir cliqué sur « Valider », une confirmation s'affiche avec un numéro de référence et vos informations. Vous pouvez l'imprimer ou l'enregistrer en PDF depuis votre navigateur, et également envoyer une copie par email à l'investigateur.
+    <!-- Signature pad -->
+    <div class="sig-wrap">
+      <label>Signature *</label>
+      <div class="sig-area">
+        <canvas id="sig-canvas"></canvas>
+        <div class="sig-hint" id="sig-hint">Signez ici avec votre souris<br>ou votre doigt</div>
+      </div>
+      <button class="sig-clear" type="button" onclick="clearSig()">Effacer la signature</button>
     </div>
 
-    <button class="btn-submit" id="btn-submit" disabled onclick="submitConsent()" style="margin-top:22px;">
+    <button class="btn-submit" id="btn-submit" disabled onclick="submitConsent()">
       Valider mon consentement →
     </button>
   </div>
 
 </div><!-- /form-page -->
 
-<!-- ── CONFIRMATION ───────────────────────────────────────────────────────── -->
+<!-- Confirmation -->
 <div class="page">
   <div id="confirmation">
     <div class="check-icon">✅</div>
     <h2>Consentement enregistré</h2>
     <p class="ref" id="conf-ref"></p>
-
     <div class="summary-box" id="conf-summary"></div>
-
-    <button class="btn-print" onclick="window.print()">🖨️ Imprimer / Enregistrer en PDF</button>
+    <button class="btn-pdf" onclick="downloadPDF()">⬇ Télécharger le PDF signé</button>
     <a class="btn-email" id="conf-email" href="#">✉️ Envoyer par email</a>
-    <p class="print-note">Dans la fenêtre d'impression, sélectionnez « Enregistrer en PDF » pour obtenir un fichier numérique. Vous pouvez ensuite l'envoyer à l'investigateur ou le conserver pour vos archives.</p>
+    <p class="print-note">Téléchargez d'abord le PDF, puis joignez-le à l'email pour l'envoyer à l'investigateur.</p>
   </div>
-
   <div class="footer">
     Formulaire de consentement éclairé · Faculté d'odontologie de Lyon · Usage pédagogique<br>
-    Dr. Raphaël RICHERT — raphael.richert@univ-lyon1.fr
+    Dr. Raphaël RICHERT — raphael.richert@insa-lyon.fr
   </div>
 </div>
 
 <script>
-  // Pré-remplir la date du jour
-  document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+/* ── Signature pad ────────────────────────────────────────────────── */
+const canvas = document.getElementById('sig-canvas');
+const ctx    = canvas.getContext('2d');
+let drawing  = false;
+let hasSig   = false;
 
-  // Activer le bouton quand tout est rempli
-  function checkForm() {
-    const ok = document.getElementById('f-prenom').value.trim() &&
-               document.getElementById('f-nom').value.trim() &&
-               document.getElementById('f-statut').value &&
-               document.getElementById('f-date').value &&
-               document.getElementById('f-consent').checked;
-    document.getElementById('btn-submit').disabled = !ok;
-  }
-  ['f-prenom','f-nom','f-statut','f-date','f-consent'].forEach(id =>
-    document.getElementById(id).addEventListener('input', checkForm)
+function resizeCanvas() {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width  = rect.width  * window.devicePixelRatio;
+  canvas.height = 140 * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  ctx.strokeStyle = '#1a1a2e';
+  ctx.lineWidth   = 2;
+  ctx.lineCap     = 'round';
+  ctx.lineJoin    = 'round';
+}
+resizeCanvas();
+
+function getPos(e) {
+  const r = canvas.getBoundingClientRect();
+  const src = e.touches ? e.touches[0] : e;
+  return { x: src.clientX - r.left, y: src.clientY - r.top };
+}
+function startDraw(e) {
+  e.preventDefault();
+  drawing = true;
+  const p = getPos(e);
+  ctx.beginPath();
+  ctx.moveTo(p.x, p.y);
+  document.getElementById('sig-hint').classList.add('hidden');
+}
+function draw(e) {
+  if (!drawing) return;
+  e.preventDefault();
+  const p = getPos(e);
+  ctx.lineTo(p.x, p.y);
+  ctx.stroke();
+  hasSig = true;
+  checkForm();
+}
+function endDraw() { drawing = false; }
+
+canvas.addEventListener('mousedown',  startDraw);
+canvas.addEventListener('mousemove',  draw);
+canvas.addEventListener('mouseup',    endDraw);
+canvas.addEventListener('mouseleave', endDraw);
+canvas.addEventListener('touchstart', startDraw, { passive: false });
+canvas.addEventListener('touchmove',  draw,      { passive: false });
+canvas.addEventListener('touchend',   endDraw);
+
+function clearSig() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  hasSig = false;
+  document.getElementById('sig-hint').classList.remove('hidden');
+  checkForm();
+}
+
+/* ── Form validation ─────────────────────────────────────────────── */
+document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+
+function checkForm() {
+  const ok = document.getElementById('f-prenom').value.trim() &&
+             document.getElementById('f-nom').value.trim() &&
+             document.getElementById('f-statut').value &&
+             document.getElementById('f-date').value &&
+             document.getElementById('f-consent').checked &&
+             hasSig;
+  document.getElementById('btn-submit').disabled = !ok;
+}
+['f-prenom','f-nom','f-statut','f-date'].forEach(id =>
+  document.getElementById(id).addEventListener('input', checkForm)
+);
+document.getElementById('f-consent').addEventListener('change', checkForm);
+
+/* ── State for PDF ───────────────────────────────────────────────── */
+let G = {};
+
+function submitConsent() {
+  G.prenom  = document.getElementById('f-prenom').value.trim();
+  G.nom     = document.getElementById('f-nom').value.trim();
+  G.statut  = document.getElementById('f-statut').value;
+  G.dateVal = document.getElementById('f-date').value;
+  G.dateStr = new Date(G.dateVal).toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' });
+  G.now     = new Date().toLocaleString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  G.ref     = 'CONS-' + Date.now().toString(36).toUpperCase();
+  G.sigImg  = canvas.toDataURL('image/png');
+
+  document.getElementById('conf-ref').textContent = 'Référence : ' + G.ref + ' · ' + G.now;
+  document.getElementById('conf-summary').innerHTML = `
+    <div><strong>Participant :</strong> ${G.prenom} ${G.nom.toUpperCase()}</div>
+    <div><strong>Statut :</strong> ${G.statut}</div>
+    <div><strong>Date de consentement :</strong> ${G.dateStr}</div>
+    <div><strong>Étude :</strong> Capacité du praticien à évaluer un dispositif médical intégrant de l'IA</div>
+    <div><strong>Investigateur principal :</strong> Dr. Raphaël RICHERT — Faculté d'odontologie de Lyon</div>
+    <div style="margin-top:8px;padding-top:8px;border-top:1px solid #ddd;color:#27ae60;font-weight:700;">✓ Consentement accordé librement et en connaissance de cause</div>
+  `;
+
+  const subject = encodeURIComponent('Consentement étude IA · ' + G.prenom + ' ' + G.nom + ' · ' + G.ref);
+  const body    = encodeURIComponent(
+    'Bonjour Dr. Richert,\n\nVeuillez trouver ci-joint mon formulaire de consentement signé.\n\n' +
+    'Participant : ' + G.prenom + ' ' + G.nom + '\n' +
+    'Statut : ' + G.statut + '\n' +
+    'Date : ' + G.dateStr + '\n' +
+    'Référence : ' + G.ref + '\n\n' +
+    'Étude : Capacité du praticien à évaluer un dispositif médical intégrant de l\'IA\n\n' +
+    'Cordialement,\n' + G.prenom + ' ' + G.nom
   );
-  document.getElementById('f-consent').addEventListener('change', checkForm);
+  document.getElementById('conf-email').href = 'mailto:raphael.richert@insa-lyon.fr?subject=' + subject + '&body=' + body;
 
-  function submitConsent() {
-    const prenom  = document.getElementById('f-prenom').value.trim();
-    const nom     = document.getElementById('f-nom').value.trim();
-    const statut  = document.getElementById('f-statut').value;
-    const dateVal = document.getElementById('f-date').value;
+  document.getElementById('form-page').style.display = 'none';
+  document.getElementById('confirmation').style.display = 'block';
+  document.getElementById('confirmation').scrollIntoView({ behavior: 'smooth' });
+}
 
-    const dateStr = new Date(dateVal).toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' });
-    const now     = new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
-    const ref     = 'CONS-' + Date.now().toString(36).toUpperCase();
+/* ── PDF generation ──────────────────────────────────────────────── */
+function downloadPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
-    // Afficher la confirmation
-    document.getElementById('conf-ref').textContent = 'Référence : ' + ref + ' · ' + dateStr + ' à ' + now;
-    document.getElementById('conf-summary').innerHTML = `
-      <div><strong>Participant :</strong> ${prenom} ${nom.toUpperCase()}</div>
-      <div><strong>Statut :</strong> ${statut}</div>
-      <div><strong>Date de consentement :</strong> ${dateStr}</div>
-      <div><strong>Étude :</strong> Capacité du praticien à évaluer un dispositif médical intégrant de l'IA</div>
-      <div><strong>Investigateur principal :</strong> Dr. Raphaël RICHERT — Faculté d'odontologie de Lyon</div>
-      <div style="margin-top:8px;padding-top:8px;border-top:1px solid #ddd;color:#27ae60;font-weight:700;">✓ Consentement accordé librement et en connaissance de cause</div>
-    `;
+  const W = 210, mL = 25, mR = 25, cW = W - mL - mR;
+  let y = 20;
 
-    // Lien email pré-rempli
-    const subject = encodeURIComponent('Consentement étude IA · ' + prenom + ' ' + nom + ' · ' + ref);
-    const body    = encodeURIComponent(
-      'Bonjour,\n\nJe vous confirme mon consentement à participer à l\'étude.\n\n' +
-      'Participant : ' + prenom + ' ' + nom + '\n' +
-      'Statut : ' + statut + '\n' +
-      'Date : ' + dateStr + '\n' +
-      'Référence : ' + ref + '\n\n' +
-      'Étude : Capacité du praticien à évaluer un dispositif médical intégrant de l\'IA\n' +
-      'Investigateur : Dr. Raphaël RICHERT\n\n' +
-      'Cordialement,\n' + prenom + ' ' + nom
-    );
-    document.getElementById('conf-email').href =
-      'mailto:raphael.richert@univ-lyon1.fr?subject=' + subject + '&body=' + body;
-
-    // Scroll & afficher
-    document.getElementById('form-page').style.display = 'none';
-    document.getElementById('confirmation').style.display = 'block';
-    document.getElementById('confirmation').scrollIntoView({ behavior: 'smooth' });
+  function setFont(style, size) {
+    doc.setFont('times', style);
+    doc.setFontSize(size);
   }
+  function line(color) {
+    doc.setDrawColor(color || 80);
+    doc.setLineWidth(0.4);
+    doc.line(mL, y, W - mR, y);
+    y += 4;
+  }
+  function text(str, opts) {
+    const align = (opts && opts.align) || 'left';
+    const x = align === 'center' ? W / 2 : mL;
+    doc.text(str, x, y, { align });
+    y += (opts && opts.gap != null ? opts.gap : doc.getFontSize() * 0.4);
+  }
+  function wrap(str, lineH) {
+    const lines = doc.splitTextToSize(str, cW);
+    doc.text(lines, mL, y);
+    y += lines.length * (lineH || doc.getFontSize() * 0.42) + 1;
+  }
+  function section(title) {
+    y += 2;
+    setFont('bold', 11);
+    doc.setTextColor(0);
+    text(title + ' :');
+    setFont('normal', 11);
+  }
+  function checkPage(needed) {
+    if (y + needed > 277) { doc.addPage(); y = 20; }
+  }
+
+  /* ── En-tête ── */
+  setFont('bold', 14);
+  doc.setTextColor(0);
+  text('FORMULAIRE DE CONSENTEMENT ÉCLAIRÉ', { align: 'center', gap: 6 });
+  setFont('normal', 10);
+  doc.setTextColor(80);
+  text('Atelier IA en Odontologie · Faculté d\'odontologie de Lyon · Université Lyon 1', { align: 'center', gap: 4 });
+  doc.setTextColor(0);
+  y += 2;
+  line(40);
+
+  /* ── But de l'étude ── */
+  section('But de l\'étude');
+  wrap(
+    'Cette étude vise à évaluer la capacité des chirurgiens-dentistes et des étudiants en odontologie ' +
+    'à identifier les critères de fiabilité d\'un dispositif médical intégrant de l\'intelligence artificielle, ' +
+    'à l\'aide d\'une grille d\'analyse structurée. Elle est conduite par le Dr. Raphaël RICHERT (MCU-PH en Endodontie) ' +
+    'et M. Alexandre CHNEKER (étudiant en 5e année), Faculté d\'odontologie de Lyon.'
+  );
+
+  /* ── Déroulement ── */
+  checkPage(40);
+  section('Déroulement et engagement');
+  wrap(
+    'L\'exercice consiste à analyser un ou plusieurs sites internet fictifs représentant des dispositifs médicaux ' +
+    'intégrant de l\'IA, à l\'aide d\'une grille d\'analyse portant sur les 10 critères du guide ADF ' +
+    '« Usage de l\'IA en odontologie » (octobre 2025) : origine des données d\'entraînement, protection des données ' +
+    '(RGPD), performance clinique, explicabilité de l\'IA, garantie de supervision humaine, fréquence des mises à jour, ' +
+    'documentation technique et scientifique, conformité réglementaire (CE-DM, IA Act), transparence des coûts, ' +
+    'qualité du support client. Durée : 60 minutes, travail individuel suivi d\'un retour collectif.'
+  );
+
+  /* ── Liberté ── */
+  checkPage(20);
+  section('Liberté de participation');
+  wrap(
+    'Votre participation est entièrement volontaire. Vous pouvez retirer votre consentement à tout moment, ' +
+    'sans raison ni conséquence. Les réponses ont un caractère facultatif.'
+  );
+
+  /* ── Engagement investigateur ── */
+  checkPage(20);
+  section('Engagement de l\'investigateur');
+  wrap(
+    'Je m\'engage à mener cette recherche conformément aux bonnes pratiques et à la réglementation applicable, ' +
+    'à informer les participants de tout élément nouveau susceptible de modifier leur consentement, ' +
+    'et à ne communiquer les résultats que sous forme anonymisée.'
+  );
+
+  /* ── Confidentialité ── */
+  checkPage(20);
+  section('Confidentialité des données');
+  wrap(
+    'Toutes les données collectées seront traitées de manière strictement anonyme et confidentielle. ' +
+    'Le traitement informatique n\'est pas nominatif. Toute transmission à des fins de publication scientifique ' +
+    'sera réalisée sous forme anonymisée. Cette étude est conduite conformément à la législation française ' +
+    'en vigueur et aux principes de la Déclaration d\'Helsinki.'
+  );
+
+  /* ── Déontologie ── */
+  checkPage(15);
+  section('Déontologie');
+  wrap(
+    'Cette étude n\'est soumise à aucun comité d\'éthique spécifique, s\'agissant d\'une étude ' +
+    'pédagogique ne présentant pas de risque pour les participants. Elle respecte néanmoins les ' +
+    'principes généraux de la recherche impliquant des personnes humaines.'
+  );
+
+  /* ── Contact ── */
+  checkPage(20);
+  section('Contact');
+  wrap(
+    'Dr. Raphaël RICHERT — MCU-PH en Endodontie\n' +
+    'Faculté d\'odontologie de Lyon · 11 rue Guillaume Paradin · 69372 Lyon Cedex 08\n' +
+    'Courriel : raphael.richert@insa-lyon.fr'
+  );
+
+  /* ── Séparateur ── */
+  y += 3;
+  checkPage(55);
+  line(40);
+
+  /* ── Bloc participant & consentement ── */
+  setFont('bold', 11);
+  text('Consentement du participant');
+  y += 2;
+  setFont('normal', 10);
+
+  const rows = [
+    ['Nom et Prénom', G.prenom + ' ' + G.nom.toUpperCase()],
+    ['Statut',        G.statut],
+    ['Date',          G.dateStr],
+    ['Référence',     G.ref],
+    ['Horodatage',    G.now],
+  ];
+  rows.forEach(([lbl, val]) => {
+    setFont('bold', 10);
+    doc.text(lbl + ' :', mL, y);
+    setFont('normal', 10);
+    doc.text(val, mL + 45, y);
+    y += 5;
+  });
+
+  y += 4;
+  setFont('normal', 10);
+  const consentText =
+    'Après avoir lu et compris les informations ci-dessus, et avoir eu la possibilité de poser toutes mes ' +
+    'questions, j\'accepte librement de participer à cette étude dans les conditions décrites. ' +
+    'Je suis informé(e) que je peux retirer mon consentement à tout moment.';
+  wrap(consentText);
+
+  /* ── Signature ── */
+  checkPage(45);
+  y += 4;
+  setFont('bold', 10);
+  text('Signature du participant :');
+  y += 2;
+
+  // Cadre signature
+  doc.setDrawColor(120);
+  doc.setLineWidth(0.3);
+  doc.rect(mL, y, cW * 0.55, 30);
+
+  // Image de la signature dans le cadre
+  try {
+    doc.addImage(G.sigImg, 'PNG', mL + 2, y + 2, cW * 0.55 - 4, 26);
+  } catch(e) { /* si l'image échoue, le cadre reste vide */ }
+
+  // Bloc investigateur à droite
+  const rx = mL + cW * 0.6;
+  doc.setFont('times', 'bold');
+  doc.setFontSize(10);
+  doc.text('Investigateur principal :', rx, y + 5);
+  doc.setFont('times', 'normal');
+  doc.text('Dr. Raphaël RICHERT', rx, y + 11);
+  doc.text('MCU-PH en Endodontie', rx, y + 16);
+  doc.text('Faculté d\'odontologie de Lyon', rx, y + 21);
+
+  y += 35;
+  line(200);
+
+  // Pied de page sobre
+  setFont('normal', 8);
+  doc.setTextColor(120);
+  text('Formulaire de consentement éclairé · Usage pédagogique · Faculté d\'odontologie de Lyon · Université Lyon 1', { align: 'center', gap: 4 });
+  text('raphael.richert@insa-lyon.fr', { align: 'center', gap: 0 });
+
+  doc.save('Consentement_' + G.nom.toUpperCase() + '_' + G.prenom + '_' + G.ref + '.pdf');
+}
 </script>
 
 </body>
